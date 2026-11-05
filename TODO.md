@@ -16,11 +16,17 @@
 - [x] Support filtering by stage and search text.
 - [x] Provide a creator directory view and return each record to its creator workspace.
 
+## Phase 1 creator intelligence
+- [x] Create persistent Supabase evidence and screening tables with RLS policies.
+- [x] Add evidence ledger reads and evidence capture form to each creator workspace.
+- [x] Add four-dimension qualification scoring, decision state, rationale, and controlled stage updates.
+- [x] Keep unverified creators blocked from outreach by default.
+
 ## Functional workspaces
 - [x] Make Overview, Creators, Approvals, Outreach, Products, Whop revenue, and Reports real navigation states rather than decorative sidebar buttons.
 - [x] Make primary overview actions open the relevant creator workspace.
-- [ ] Add persistent creator detail routes and evidence records.
-- [ ] Add screening forms and controlled stage transitions.
+- [x] Add persistent creator detail routes and evidence records.
+- [x] Add screening forms and controlled stage transitions.
 - [ ] Add outreach drafts, approval mutations, send logs, reply capture, and follow-up scheduling.
 - [ ] Add product hypotheses, launch materials, and creator-specific marketing workspaces.
 - [ ] Add Whop product and transaction attribution imports.

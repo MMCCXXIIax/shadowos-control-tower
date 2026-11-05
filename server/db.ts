@@ -2,7 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, creators, activity, InsertCreator, InsertActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { CreatorRecord, ActivityRecord, getLiveCreator, isSupabaseConfigured, listLiveActivity, listLiveCreators } from "./supabase";
+import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, getLiveCreator, getLiveScreening, insertLiveEvidence, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveEvidence, updateLiveCreator, upsertLiveScreening } from "./supabase";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -86,6 +86,36 @@ export async function getCreatorSource() {
     console.warn("[Supabase] Source check failed", error instanceof Error ? error.message : "unknown error");
     return "Local fallback" as const;
   }
+}
+
+export async function listEvidence(creatorId: string) {
+  if (isSupabaseConfigured()) {
+    try { return await listLiveEvidence(creatorId); }
+    catch (error) { console.warn("[Supabase] Evidence read failed", error instanceof Error ? error.message : "unknown error"); }
+  }
+  return [] as EvidenceRecord[];
+}
+
+export async function getScreening(creatorId: string) {
+  if (isSupabaseConfigured()) {
+    try { return await getLiveScreening(creatorId); }
+    catch (error) { console.warn("[Supabase] Screening read failed", error instanceof Error ? error.message : "unknown error"); }
+  }
+  return undefined as ScreeningRecord | undefined;
+}
+
+export async function addEvidence(input: Omit<EvidenceRecord, "id" | "capturedAt">) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to save evidence");
+  return insertLiveEvidence(input);
+}
+
+export async function saveScreening(input: Omit<ScreeningRecord, "updatedAt">) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to save screening");
+  const screening = await upsertLiveScreening(input);
+  const total = input.audienceFit + input.buyingSignals + input.expertiseAuthority + input.partnershipReadiness;
+  const stage = input.decision === "qualified" ? "qualified" : input.decision === "hold" ? "screening" : input.decision === "reject" ? "archived" : "screening";
+  await updateLiveCreator(input.creatorId, { qualification_score: total, stage, research_status: "deep_research", confidence: total >= 70 ? "high" : total >= 45 ? "medium" : "low", approval_status: input.decision === "qualified" ? "needs_review" : "not_ready" });
+  return screening;
 }
 
 export async function insertCreator(record: InsertCreator) { const db = await getDb(); if (!db) return; await db.insert(creators).values(record).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } }); }

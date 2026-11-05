@@ -22,7 +22,7 @@ The visual reference is the product discipline of Whop and the identity-rich, mo
 - **Signature Brand Color:** burnt amber #D9893D.
 
 ## Live data boundary
-Supabase project `epfzmhlxkbwtknmrkeuf` is the live source for creator and activity reads. The `shadowos_creators` and `shadowos_activity` tables use row-level security with read-only policies for the application’s publishable key. The server prefers Supabase and falls back to the local managed database only when Supabase is unavailable. The UI reports the active source instead of silently hiding a connection failure.
+Supabase project `bklrfjnqbyyntlhmprkp` is the live source for creator, activity, evidence, and screening reads/writes. The `shadowos_creators`, `shadowos_activity`, `shadowos_creator_evidence`, and `shadowos_creator_screenings` tables use row-level security for the application’s publishable key. Phase 1 persists research evidence and qualification decisions while leaving unverified creators blocked from outreach. The server prefers Supabase and falls back to the local managed database only when Supabase is unavailable. The UI reports the active source instead of silently hiding a connection failure.
 
 ## Implementation approach
 Use the initialized React/Express/tRPC/Drizzle project. Add a creator database table and a lightweight activity/outreach model. Seed the 31 PDF candidates as `discovery` records; never mark them verified. The UI uses live Supabase records when configured and a safe local fallback so the first view remains usable during an outage. Build the dashboard, priority queue, creator detail drawer/page, pipeline filters, and approval-state controls first.
