@@ -29,4 +29,4 @@
 - [x] Run type checks and production build.
 - [x] Start preview and verify the dashboard loads.
 - [x] Verify the live Supabase creator and source endpoints.
-- [ ] Save the next checkpoint after the final logo metadata is applied.
+- [x] Save the next checkpoint after the final logo metadata is applied.
