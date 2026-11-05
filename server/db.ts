@@ -2,6 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, creators, activity, InsertCreator, InsertActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { CreatorRecord, ActivityRecord, getLiveCreator, isSupabaseConfigured, listLiveActivity, listLiveCreators } from "./supabase";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -32,8 +33,60 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function listCreators() { const db = await getDb(); return db ? db.select().from(creators).orderBy(desc(creators.updatedAt)) : []; }
-export async function getCreator(creatorId: string) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(creators).where(eq(creators.creatorId, creatorId)).limit(1); return result[0]; }
-export async function listActivity(creatorId: string) { const db = await getDb(); return db ? db.select().from(activity).where(eq(activity.creatorId, creatorId)).orderBy(desc(activity.createdAt)).limit(50) : []; }
+async function listLocalCreators(): Promise<CreatorRecord[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select().from(creators).orderBy(desc(creators.updatedAt));
+  return rows.map(row => ({ ...row, subNiche: row.subNiche, tags: row.tags ?? [] }));
+}
+
+async function getLocalCreator(creatorId: string): Promise<CreatorRecord | undefined> {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(creators).where(eq(creators.creatorId, creatorId)).limit(1);
+  const row = result[0];
+  return row ? { ...row, subNiche: row.subNiche, tags: row.tags ?? [] } : undefined;
+}
+
+async function listLocalActivity(creatorId: string): Promise<ActivityRecord[]> {
+  const db = await getDb(); if (!db) return [];
+  const rows = await db.select().from(activity).where(eq(activity.creatorId, creatorId)).orderBy(desc(activity.createdAt)).limit(50);
+  return rows.map(row => ({ ...row }));
+}
+
+export async function listCreators() {
+  if (isSupabaseConfigured()) {
+    try { return await listLiveCreators(); }
+    catch (error) { console.warn("[Supabase] Creator read failed; using local fallback", error instanceof Error ? error.message : "unknown error"); }
+  }
+  return listLocalCreators();
+}
+
+export async function getCreator(creatorId: string) {
+  if (isSupabaseConfigured()) {
+    try { return await getLiveCreator(creatorId); }
+    catch (error) { console.warn("[Supabase] Creator read failed; using local fallback", error instanceof Error ? error.message : "unknown error"); }
+  }
+  return getLocalCreator(creatorId);
+}
+
+export async function listActivity(creatorId: string) {
+  if (isSupabaseConfigured()) {
+    try { return await listLiveActivity(creatorId); }
+    catch (error) { console.warn("[Supabase] Activity read failed; using local fallback", error instanceof Error ? error.message : "unknown error"); }
+  }
+  return listLocalActivity(creatorId);
+}
+
+export async function getCreatorSource() {
+  if (!isSupabaseConfigured()) return "Local fallback" as const;
+  try {
+    await listLiveCreators();
+    return "Supabase live" as const;
+  } catch (error) {
+    console.warn("[Supabase] Source check failed", error instanceof Error ? error.message : "unknown error");
+    return "Local fallback" as const;
+  }
+}
+
 export async function insertCreator(record: InsertCreator) { const db = await getDb(); if (!db) return; await db.insert(creators).values(record).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } }); }
 export async function insertActivity(record: InsertActivity) { const db = await getDb(); if (!db) return; await db.insert(activity).values(record); }

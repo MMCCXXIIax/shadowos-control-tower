@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { getCreator, listActivity, listCreators } from "./db";
+import { getCreator, getCreatorSource, listActivity, listCreators } from "./db";
 
 export const appRouter = router({
   system: systemRouter,
@@ -14,6 +14,7 @@ export const appRouter = router({
     creators: publicProcedure.query(() => listCreators()),
     creator: publicProcedure.input((value: unknown) => String(value)).query(({ input }) => getCreator(input)),
     activity: publicProcedure.input((value: unknown) => String(value)).query(({ input }) => listActivity(input)),
+    source: publicProcedure.query(async () => ({ label: await getCreatorSource() })),
   }),
 });
 
