@@ -2,7 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, creators, activity, InsertCreator, InsertActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, getLiveCreator, getLiveScreening, insertLiveEvidence, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveEvidence, updateLiveCreator, upsertLiveScreening } from "./supabase";
+import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, FollowupRecord, OutreachDraftRecord, OutreachEventRecord, getLiveCreator, getLiveScreening, insertLiveDraft, insertLiveEvent, insertLiveEvidence, insertLiveFollowup, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveDrafts, listLiveEvidence, listLiveEvents, listLiveFollowups, patchLiveDraft, updateLiveCreator, upsertLiveScreening } from "./supabase";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -116,6 +116,54 @@ export async function saveScreening(input: Omit<ScreeningRecord, "updatedAt">) {
   const stage = input.decision === "qualified" ? "qualified" : input.decision === "hold" ? "screening" : input.decision === "reject" ? "archived" : "screening";
   await updateLiveCreator(input.creatorId, { qualification_score: total, stage, research_status: "deep_research", confidence: total >= 70 ? "high" : total >= 45 ? "medium" : "low", approval_status: input.decision === "qualified" ? "needs_review" : "not_ready" });
   return screening;
+}
+
+export async function listOutreachDrafts() {
+  if (!isSupabaseConfigured()) return [] as OutreachDraftRecord[];
+  try { return await listLiveDrafts(); }
+  catch (error) { console.warn("[Supabase] Outreach draft read failed", error instanceof Error ? error.message : "unknown error"); return []; }
+}
+
+export async function listOutreachEvents(creatorId?: string) {
+  if (!isSupabaseConfigured()) return [] as OutreachEventRecord[];
+  try { return await listLiveEvents(creatorId); }
+  catch (error) { console.warn("[Supabase] Outreach event read failed", error instanceof Error ? error.message : "unknown error"); return []; }
+}
+
+export async function listFollowups() {
+  if (!isSupabaseConfigured()) return [] as FollowupRecord[];
+  try { return await listLiveFollowups(); }
+  catch (error) { console.warn("[Supabase] Follow-up read failed", error instanceof Error ? error.message : "unknown error"); return []; }
+}
+
+export async function createOutreachDraft(input: { creatorId: string; channel: "instagram" | "email"; subject: string | null; body: string; personalizationSummary: string | null }) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to save outreach drafts");
+  const creator = await getLiveCreator(input.creatorId);
+  if (!creator || !["qualified", "outreach", "replied", "partnership", "product", "launch", "live"].includes(creator.stage)) throw new Error("Creator must be qualified before outreach drafting");
+  const draft = await insertLiveDraft(input);
+  if (draft) await insertLiveEvent({ creatorId: input.creatorId, draftId: draft.id, channel: input.channel, eventType: "draft_created", note: "Draft created in ShadowOS; no message sent." });
+  return draft;
+}
+
+export async function updateOutreachDraftStatus(input: { id: number; status: "needs_review" | "approved" | "sent" | "replied" | "rejected" | "archived"; note: string | null }) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to update outreach drafts");
+  const drafts = await listLiveDrafts();
+  const draft = drafts.find(item => item.id === input.id);
+  if (!draft) throw new Error("Outreach draft not found");
+  if (input.status === "sent" && draft.status !== "approved") throw new Error("Only approved drafts can be marked sent");
+  const now = new Date().toISOString();
+  const updated = await patchLiveDraft(input.id, { status: input.status, approved_at: input.status === "approved" ? now : draft.approvedAt, sent_at: input.status === "sent" ? now : draft.sentAt });
+  if (updated) await insertLiveEvent({ creatorId: draft.creatorId, draftId: draft.id, channel: draft.channel, eventType: input.status === "needs_review" ? "submitted_for_review" : input.status, note: input.note });
+  if (input.status === "sent") await updateLiveCreator(draft.creatorId, { stage: "outreach", approval_status: "approved" });
+  if (input.status === "replied") await updateLiveCreator(draft.creatorId, { stage: "replied" });
+  return updated;
+}
+
+export async function scheduleOutreachFollowup(input: { creatorId: string; draftId: number | null; channel: "instagram" | "email"; dueAt: string; note: string | null }) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to schedule follow-ups");
+  const followup = await insertLiveFollowup(input);
+  if (followup) await insertLiveEvent({ creatorId: input.creatorId, draftId: input.draftId, channel: input.channel, eventType: "followup_due", note: `Follow-up scheduled for ${input.dueAt}.` });
+  return followup;
 }
 
 export async function insertCreator(record: InsertCreator) { const db = await getDb(); if (!db) return; await db.insert(creators).values(record).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } }); }

@@ -27,9 +27,16 @@
 - [x] Make primary overview actions open the relevant creator workspace.
 - [x] Add persistent creator detail routes and evidence records.
 - [x] Add screening forms and controlled stage transitions.
-- [ ] Add outreach drafts, approval mutations, send logs, reply capture, and follow-up scheduling.
+- [x] Add outreach drafts, approval mutations, send logs, reply capture, and follow-up scheduling.
 - [ ] Add product hypotheses, launch materials, and creator-specific marketing workspaces.
 - [ ] Add Whop product and transaction attribution imports.
+
+## Outreach Operations
+- [x] Create persistent Supabase tables for creator-specific drafts, events, and follow-ups.
+- [x] Add Instagram and email draft composer with creator qualification gating.
+- [x] Add explicit submit-for-review, approve, and manually-mark-sent states.
+- [x] Keep external sending disabled; marking sent records a manual event only.
+- [x] Add follow-up scheduling linked to the draft and creator.
 
 ## Validation and delivery
 - [x] Run type checks and production build.
