@@ -31,6 +31,8 @@ Product Operations is the architecture and review layer, not the manufacturing l
 
 Marketing Operations begins only after a product is approved. It stores creator-specific campaign plans and pre-launch, launch, and post-launch calendar items with audience segment, positioning, offer angle, creator voice, asset direction, scheduling, and approval status. ShadowOS prepares and reviews marketing work but does not publish externally; items must be approved before they can become ready or published in the operating record.
 
+Whop Revenue Operations is a read-only attribution layer. It maps each creator product to its Whop product ID, stores negotiated creator/ShadowOS share terms, and records imported payment facts including gross amount, Whop fees, refunds, net amount, and each party's allocation. The service refuses mismatched shares or totals and never performs withdrawals, transfers, refunds, or other money movement. The current Whop connector is authenticated but exposes no visible business account, so live payment sync remains pending until a Whop business account is available.
+
 ## Project structure
 - `drizzle/schema.ts`: users, creators, activity records, and local resilience tables.
 - `server/supabase.ts`: read-only live Supabase adapter and field normalization.

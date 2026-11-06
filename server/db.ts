@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, creators, activity, InsertCreator, InsertActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, FollowupRecord, OutreachDraftRecord, OutreachEventRecord, ProductBriefRecord, MarketingPlanRecord, MarketingItemRecord, getLiveCreator, getLiveScreening, insertLiveDraft, insertLiveEvent, insertLiveEvidence, insertLiveFollowup, insertLiveMarketingItem, insertLiveMarketingPlan, insertLiveProductBrief, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveDrafts, listLiveEvidence, listLiveEvents, listLiveFollowups, listLiveMarketingItems, listLiveMarketingPlans, listLiveProductBriefs, patchLiveDraft, patchLiveMarketingItem, patchLiveMarketingPlan, patchLiveProductBrief, updateLiveCreator, upsertLiveScreening } from "./supabase";
+import { WhopProductRecord, RevenueShareTermRecord, WhopTransactionRecord, insertWhopProduct, insertRevenueShareTerm, insertWhopTransaction, listWhopProducts, listRevenueShareTerms, listWhopTransactions } from "./whopRevenue";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -224,6 +225,26 @@ export async function updateMarketingItem(input: { id: number; status: "needs_re
   const items = await listLiveMarketingItems(); const current = items.find(item => item.id === input.id); if (!current) throw new Error("Marketing item not found");
   if (["approved", "ready", "published"].includes(input.status) && current.status !== "approved" && input.status !== "approved") throw new Error("Marketing item must be approved before it can be ready or published");
   return patchLiveMarketingItem(input.id, { status: input.status });
+}
+
+export async function listRevenueProducts(creatorId?: string) { return listWhopProducts(creatorId); }
+export async function listRevenueTerms(creatorId?: string) { return listRevenueShareTerms(creatorId); }
+export async function listRevenueTransactions(creatorId?: string) { return listWhopTransactions(creatorId); }
+export async function createRevenueProduct(input: Omit<WhopProductRecord, "id" | "status" | "lastSyncedAt" | "createdAt" | "updatedAt">) {
+  const creator = await getLiveCreator(input.creatorId); if (!creator || !["product", "launch", "live"].includes(creator.stage)) throw new Error("Only product, launch, or live creators can receive a Whop product mapping");
+  return insertWhopProduct(input);
+}
+export async function createRevenueTerm(input: Omit<RevenueShareTermRecord, "id" | "createdAt" | "updatedAt">) {
+  if (input.creatorSharePercent + input.shadowSharePercent !== 100) throw new Error("Creator and ShadowOS shares must total 100%");
+  const products = await listWhopProducts(input.creatorId); if (!products.some(product => product.id === input.whopProductId)) throw new Error("Revenue-share product does not belong to this creator");
+  return insertRevenueShareTerm(input);
+}
+export async function createRevenueTransaction(input: Omit<WhopTransactionRecord, "id" | "importedAt">) {
+  const products = await listWhopProducts(input.creatorId); if (input.whopProductId && !products.some(product => product.id === input.whopProductId)) throw new Error("Transaction product does not belong to this creator");
+  if (input.grossAmountCents < 0 || input.whopFeesCents < 0 || input.refundsCents < 0) throw new Error("Revenue amounts cannot be negative");
+  if (input.netAmountCents !== input.grossAmountCents - input.whopFeesCents - input.refundsCents) throw new Error("Net amount must equal gross minus Whop fees and refunds");
+  if (input.creatorShareCents + input.shadowShareCents !== input.netAmountCents) throw new Error("Creator and ShadowOS amounts must equal net amount");
+  return insertWhopTransaction(input);
 }
 
 export async function insertCreator(record: InsertCreator) { const db = await getDb(); if (!db) return; await db.insert(creators).values(record).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } }); }

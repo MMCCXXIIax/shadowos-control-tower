@@ -30,6 +30,10 @@
 - [x] Add outreach drafts, approval mutations, send logs, reply capture, and follow-up scheduling.
 - [x] Add product architecture briefs, production handoff, and creator-specific review workspaces.
 - [ ] Add Whop product and transaction attribution imports.
+- [x] Add creator-specific Whop product mappings and negotiated revenue-share terms.
+- [x] Add read-only transaction attribution with gross, Whop fees, refunds, net, creator share, and ShadowOS share.
+- [x] Enforce 100% share reconciliation and transaction amount reconciliation before persistence.
+- [x] Keep withdrawals, transfers, refunds, and other money movement outside the ShadowOS control tower.
 
 ## Outreach Operations
 - [x] Create persistent Supabase tables for creator-specific drafts, events, and follow-ups.
