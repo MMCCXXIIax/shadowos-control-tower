@@ -2,7 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, creators, activity, InsertCreator, InsertActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, FollowupRecord, OutreachDraftRecord, OutreachEventRecord, ProductBriefRecord, getLiveCreator, getLiveScreening, insertLiveDraft, insertLiveEvent, insertLiveEvidence, insertLiveFollowup, insertLiveProductBrief, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveDrafts, listLiveEvidence, listLiveEvents, listLiveFollowups, listLiveProductBriefs, patchLiveDraft, patchLiveProductBrief, updateLiveCreator, upsertLiveScreening } from "./supabase";
+import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, FollowupRecord, OutreachDraftRecord, OutreachEventRecord, ProductBriefRecord, MarketingPlanRecord, MarketingItemRecord, getLiveCreator, getLiveScreening, insertLiveDraft, insertLiveEvent, insertLiveEvidence, insertLiveFollowup, insertLiveMarketingItem, insertLiveMarketingPlan, insertLiveProductBrief, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveDrafts, listLiveEvidence, listLiveEvents, listLiveFollowups, listLiveMarketingItems, listLiveMarketingPlans, listLiveProductBriefs, patchLiveDraft, patchLiveMarketingItem, patchLiveMarketingPlan, patchLiveProductBrief, updateLiveCreator, upsertLiveScreening } from "./supabase";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -192,6 +192,38 @@ export async function updateProductBrief(input: { id: number; status?: "architec
   const updated = await patchLiveProductBrief(input.id, patch);
   if (status === "approved") await updateLiveCreator(current.creatorId, { stage: "product" });
   return updated;
+}
+
+export async function listMarketingPlans(creatorId?: string) { if (!isSupabaseConfigured()) return [] as MarketingPlanRecord[]; try { return await listLiveMarketingPlans(creatorId); } catch (error) { console.warn("[Supabase] Marketing plan read failed", error instanceof Error ? error.message : "unknown error"); return []; } }
+export async function listMarketingItems(creatorId?: string) { if (!isSupabaseConfigured()) return [] as MarketingItemRecord[]; try { return await listLiveMarketingItems(creatorId); } catch (error) { console.warn("[Supabase] Marketing item read failed", error instanceof Error ? error.message : "unknown error"); return []; } }
+
+export async function createMarketingPlan(input: Omit<MarketingPlanRecord, "id" | "status" | "reviewedAt" | "approvedAt" | "createdAt" | "updatedAt">) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to save marketing plans");
+  const creator = await getLiveCreator(input.creatorId);
+  if (!creator || !["product", "launch", "live"].includes(creator.stage)) throw new Error("Creator must have an approved product before Marketing Operations can begin");
+  if (input.productBriefId) { const briefs = await listLiveProductBriefs(input.creatorId); const brief = briefs.find(item => item.id === input.productBriefId); if (!brief || brief.status !== "approved") throw new Error("Marketing plans require an approved product brief"); }
+  return insertLiveMarketingPlan(input);
+}
+
+export async function updateMarketingPlan(input: { id: number; status: "needs_review" | "approved" | "active" | "paused" | "archived"; }) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to update marketing plans");
+  const plans = await listLiveMarketingPlans(); const current = plans.find(plan => plan.id === input.id); if (!current) throw new Error("Marketing plan not found");
+  if (input.status === "active" && current.status !== "approved") throw new Error("Only approved marketing plans can become active");
+  return patchLiveMarketingPlan(input.id, { status: input.status, reviewed_at: input.status === "needs_review" || input.status === "approved" ? new Date().toISOString() : current.reviewedAt, approved_at: input.status === "approved" ? new Date().toISOString() : current.approvedAt });
+}
+
+export async function createMarketingItem(input: Omit<MarketingItemRecord, "id" | "status" | "createdAt" | "updatedAt">) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to save marketing items");
+  const creator = await getLiveCreator(input.creatorId); if (!creator || !["product", "launch", "live"].includes(creator.stage)) throw new Error("Creator must have an approved product before content planning can begin");
+  if (input.planId) { const plans = await listLiveMarketingPlans(input.creatorId); if (!plans.some(plan => plan.id === input.planId)) throw new Error("Marketing plan does not belong to this creator"); }
+  return insertLiveMarketingItem(input);
+}
+
+export async function updateMarketingItem(input: { id: number; status: "needs_review" | "approved" | "ready" | "published" | "archived" }) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to update marketing items");
+  const items = await listLiveMarketingItems(); const current = items.find(item => item.id === input.id); if (!current) throw new Error("Marketing item not found");
+  if (["approved", "ready", "published"].includes(input.status) && current.status !== "approved" && input.status !== "approved") throw new Error("Marketing item must be approved before it can be ready or published");
+  return patchLiveMarketingItem(input.id, { status: input.status });
 }
 
 export async function insertCreator(record: InsertCreator) { const db = await getDb(); if (!db) return; await db.insert(creators).values(record).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } }); }

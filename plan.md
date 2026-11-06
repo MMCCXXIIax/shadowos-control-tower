@@ -29,6 +29,8 @@ Use the initialized React/Express/tRPC/Drizzle project. Add creator intelligence
 
 Product Operations is the architecture and review layer, not the manufacturing layer. For qualified creators, ShadowOS can hold up to four product hypotheses per creator and prepare the audience problem, buying signals, transformation, format, outline, asset requirements, visual direction, launch notes, and acceptance context. Higgsfield and Claude are treated as downstream production tools. Their production report is pasted into the matching creator-specific brief, then ShadowOS records revision requests or approval only after a human review note is present.
 
+Marketing Operations begins only after a product is approved. It stores creator-specific campaign plans and pre-launch, launch, and post-launch calendar items with audience segment, positioning, offer angle, creator voice, asset direction, scheduling, and approval status. ShadowOS prepares and reviews marketing work but does not publish externally; items must be approved before they can become ready or published in the operating record.
+
 ## Project structure
 - `drizzle/schema.ts`: users, creators, activity records, and local resilience tables.
 - `server/supabase.ts`: read-only live Supabase adapter and field normalization.

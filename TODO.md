@@ -46,6 +46,13 @@
 - [x] Require production evidence and ShadowOS review notes before approval.
 - [x] Keep product records isolated by permanent creator ID.
 
+## Marketing Operations
+- [x] Create persistent creator-specific campaign plans tied to approved product briefs.
+- [x] Capture audience segment, positioning, offer angle, voice, pre-launch strategy, post-launch strategy, and asset checklist.
+- [x] Add pre-launch, launch, and post-launch calendar item support.
+- [x] Add review and approval states before content can become ready or published.
+- [x] Keep external publishing disabled; ShadowOS only prepares and tracks approved marketing work.
+
 ## Validation and delivery
 - [x] Run type checks and production build.
 - [x] Start preview and verify the dashboard loads.
