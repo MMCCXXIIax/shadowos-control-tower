@@ -27,6 +27,8 @@ Supabase project `bklrfjnqbyyntlhmprkp` is the live source for creator, activity
 ## Implementation approach
 Use the initialized React/Express/tRPC/Drizzle project. Add creator intelligence, outreach, product, and revenue models as isolated Supabase tables keyed by permanent creator IDs. Seed the 31 PDF candidates as `discovery` records; never mark them verified. The UI uses live Supabase records when configured and a safe local fallback so the first view remains usable during an outage. Outreach drafts are creator-specific and approval-gated; drafting and manual status logging never send an external message. The canonical repository is the private GitHub repository `MMCCXXIIax/shadowos-control-tower`.
 
+Product Operations is the architecture and review layer, not the manufacturing layer. For qualified creators, ShadowOS can hold up to four product hypotheses per creator and prepare the audience problem, buying signals, transformation, format, outline, asset requirements, visual direction, launch notes, and acceptance context. Higgsfield and Claude are treated as downstream production tools. Their production report is pasted into the matching creator-specific brief, then ShadowOS records revision requests or approval only after a human review note is present.
+
 ## Project structure
 - `drizzle/schema.ts`: users, creators, activity records, and local resilience tables.
 - `server/supabase.ts`: read-only live Supabase adapter and field normalization.

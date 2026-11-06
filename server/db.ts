@@ -2,7 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, creators, activity, InsertCreator, InsertActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, FollowupRecord, OutreachDraftRecord, OutreachEventRecord, getLiveCreator, getLiveScreening, insertLiveDraft, insertLiveEvent, insertLiveEvidence, insertLiveFollowup, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveDrafts, listLiveEvidence, listLiveEvents, listLiveFollowups, patchLiveDraft, updateLiveCreator, upsertLiveScreening } from "./supabase";
+import { CreatorRecord, ActivityRecord, EvidenceRecord, ScreeningRecord, FollowupRecord, OutreachDraftRecord, OutreachEventRecord, ProductBriefRecord, getLiveCreator, getLiveScreening, insertLiveDraft, insertLiveEvent, insertLiveEvidence, insertLiveFollowup, insertLiveProductBrief, isSupabaseConfigured, listLiveActivity, listLiveCreators, listLiveDrafts, listLiveEvidence, listLiveEvents, listLiveFollowups, listLiveProductBriefs, patchLiveDraft, patchLiveProductBrief, updateLiveCreator, upsertLiveScreening } from "./supabase";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -164,6 +164,34 @@ export async function scheduleOutreachFollowup(input: { creatorId: string; draft
   const followup = await insertLiveFollowup(input);
   if (followup) await insertLiveEvent({ creatorId: input.creatorId, draftId: input.draftId, channel: input.channel, eventType: "followup_due", note: `Follow-up scheduled for ${input.dueAt}.` });
   return followup;
+}
+
+export async function listProductBriefs(creatorId?: string) {
+  if (!isSupabaseConfigured()) return [] as ProductBriefRecord[];
+  try { return await listLiveProductBriefs(creatorId); }
+  catch (error) { console.warn("[Supabase] Product brief read failed", error instanceof Error ? error.message : "unknown error"); return []; }
+}
+
+export async function createProductBrief(input: Omit<ProductBriefRecord, "id" | "status" | "productionReport" | "reviewNotes" | "reviewedAt" | "approvedAt" | "createdAt" | "updatedAt">) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to save product briefs");
+  const creator = await getLiveCreator(input.creatorId);
+  if (!creator || !["qualified", "outreach", "replied", "partnership", "product", "launch", "live"].includes(creator.stage)) throw new Error("Creator must be qualified before Product Operations can begin");
+  const existing = await listLiveProductBriefs(input.creatorId);
+  if (existing.some(item => item.hypothesisNumber === input.hypothesisNumber)) throw new Error("That hypothesis slot is already used for this creator");
+  return insertLiveProductBrief(input);
+}
+
+export async function updateProductBrief(input: { id: number; status?: "architected" | "handed_off" | "in_production" | "submitted_for_review" | "revision_requested" | "approved" | "archived"; productionReport?: string | null; reviewNotes?: string | null }) {
+  if (!isSupabaseConfigured()) throw new Error("Live Supabase is required to update product briefs");
+  const all = await listLiveProductBriefs();
+  const current = all.find(item => item.id === input.id);
+  if (!current) throw new Error("Product brief not found");
+  if (input.status === "approved" && (!current.productionReport && !input.productionReport || !input.reviewNotes?.trim())) throw new Error("A production report and review notes are required before approval");
+  const status = input.status ?? current.status;
+  const patch = { status, production_report: input.productionReport ?? current.productionReport, review_notes: input.reviewNotes ?? current.reviewNotes, reviewed_at: ["submitted_for_review", "revision_requested", "approved"].includes(status) ? new Date().toISOString() : current.reviewedAt, approved_at: status === "approved" ? new Date().toISOString() : current.approvedAt };
+  const updated = await patchLiveProductBrief(input.id, patch);
+  if (status === "approved") await updateLiveCreator(current.creatorId, { stage: "product" });
+  return updated;
 }
 
 export async function insertCreator(record: InsertCreator) { const db = await getDb(); if (!db) return; await db.insert(creators).values(record).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } }); }

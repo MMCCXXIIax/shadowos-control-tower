@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { addEvidence, createOutreachDraft, getCreator, getCreatorSource, getScreening, listActivity, listCreators, listEvidence, listFollowups, listOutreachDrafts, listOutreachEvents, saveScreening, scheduleOutreachFollowup, updateOutreachDraftStatus } from "./db";
+import { addEvidence, createOutreachDraft, createProductBrief, getCreator, getCreatorSource, getScreening, listActivity, listCreators, listEvidence, listFollowups, listOutreachDrafts, listOutreachEvents, listProductBriefs, saveScreening, scheduleOutreachFollowup, updateOutreachDraftStatus, updateProductBrief } from "./db";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -25,6 +25,9 @@ export const appRouter = router({
     createOutreachDraft: publicProcedure.input((value: unknown) => z.object({ creatorId: z.string().min(1), channel: z.enum(["instagram", "email"]), subject: z.string().max(240).nullable(), body: z.string().min(20).max(10000), personalizationSummary: z.string().max(1000).nullable() }).parse(value)).mutation(({ input }) => createOutreachDraft(input)),
     updateOutreachDraftStatus: publicProcedure.input((value: unknown) => z.object({ id: z.number().int(), status: z.enum(["needs_review", "approved", "sent", "replied", "rejected", "archived"]), note: z.string().max(1000).nullable() }).parse(value)).mutation(({ input }) => updateOutreachDraftStatus(input)),
     scheduleFollowup: publicProcedure.input((value: unknown) => z.object({ creatorId: z.string().min(1), draftId: z.number().int().nullable(), channel: z.enum(["instagram", "email"]), dueAt: z.string().datetime(), note: z.string().max(1000).nullable() }).parse(value)).mutation(({ input }) => scheduleOutreachFollowup(input)),
+    productBriefs: publicProcedure.input((value: unknown) => z.object({ creatorId: z.string().optional() }).parse(value ?? {})).query(({ input }) => listProductBriefs(input.creatorId)),
+    createProductBrief: publicProcedure.input((value: unknown) => z.object({ creatorId: z.string().min(1), hypothesisNumber: z.number().int().min(1).max(4), productName: z.string().min(2).max(240), audienceProblem: z.string().min(10).max(5000), buyingSignal: z.string().max(5000).nullable(), transformation: z.string().min(10).max(5000), format: z.string().min(2).max(180), outline: z.string().min(20).max(10000), assetRequirements: z.string().max(5000).nullable(), visualDirection: z.string().max(5000).nullable(), launchNotes: z.string().max(5000).nullable() }).parse(value)).mutation(({ input }) => createProductBrief(input)),
+    updateProductBrief: publicProcedure.input((value: unknown) => z.object({ id: z.number().int(), status: z.enum(["architected", "handed_off", "in_production", "submitted_for_review", "revision_requested", "approved", "archived"]).optional(), productionReport: z.string().max(20000).nullable().optional(), reviewNotes: z.string().max(10000).nullable().optional() }).parse(value)).mutation(({ input }) => updateProductBrief(input)),
     source: publicProcedure.query(async () => ({ label: await getCreatorSource() })),
   }),
 });

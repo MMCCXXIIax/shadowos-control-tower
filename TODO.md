@@ -28,7 +28,7 @@
 - [x] Add persistent creator detail routes and evidence records.
 - [x] Add screening forms and controlled stage transitions.
 - [x] Add outreach drafts, approval mutations, send logs, reply capture, and follow-up scheduling.
-- [ ] Add product hypotheses, launch materials, and creator-specific marketing workspaces.
+- [x] Add product architecture briefs, production handoff, and creator-specific review workspaces.
 - [ ] Add Whop product and transaction attribution imports.
 
 ## Outreach Operations
@@ -37,6 +37,14 @@
 - [x] Add explicit submit-for-review, approve, and manually-mark-sent states.
 - [x] Keep external sending disabled; marking sent records a manual event only.
 - [x] Add follow-up scheduling linked to the draft and creator.
+
+## Product Operations
+- [x] Create persistent creator-specific product briefs with four hypothesis slots per creator.
+- [x] Capture audience problem, buying signals, transformation, format, outline, assets, visual direction, launch notes, and acceptance context.
+- [x] Add handoff stages for architecture, production, and production-report submission.
+- [x] Add a production-review field for reports produced by Higgsfield and Claude.
+- [x] Require production evidence and ShadowOS review notes before approval.
+- [x] Keep product records isolated by permanent creator ID.
 
 ## Validation and delivery
 - [x] Run type checks and production build.
