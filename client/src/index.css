@@ -105,8 +105,9 @@ button { cursor: pointer; }
 
 .app-shell { min-height: 100vh; display: flex; background: var(--void); color: var(--ink); }
 .sidebar {
-  width: 248px; flex: none; background: var(--ash); color: var(--ink);
-  display: flex; flex-direction: column; padding: 28px 14px 18px; min-height: 100vh;
+  width: 232px; flex: none; background: var(--ash); color: var(--ink);
+  display: flex; flex-direction: column; padding: 20px 12px 16px;
+  position: sticky; top: 0; height: 100vh; overflow: auto;
   border-right: 1px solid var(--hairline);
 }
 .brand-lockup { display: flex; align-items: center; gap: 12px; padding: 0 10px 26px; position: relative; }
@@ -126,7 +127,7 @@ button { cursor: pointer; }
 .live-label {
   float: right; color: var(--ember); font-size: 10px; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.14em;
 }
-.side-nav { display: flex; flex-direction: column; gap: 2px; }
+.side-nav { display: flex; flex-direction: column; gap: 2px; min-height: 0; }
 .nav-label {
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--mute); padding: 0 12px 10px;
 }
@@ -154,10 +155,11 @@ button { cursor: pointer; }
 
 .main-canvas { flex: 1; min-width: 0; background: var(--void); }
 .topbar {
-  height: 92px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center;
-  justify-content: space-between; padding: 0 48px; background: var(--void);
+  min-height: 72px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center;
+  justify-content: space-between; gap: 16px; padding: 14px 28px; background: var(--void);
+  position: sticky; top: 0; z-index: 4;
 }
-.topbar h1 { font-size: 30px; margin: 4px 0 0; letter-spacing: -0.045em; font-weight: 600; }
+.topbar h1 { font-size: 26px; margin: 2px 0 0; letter-spacing: -0.045em; font-weight: 600; white-space: nowrap; }
 .eyebrow {
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--mute); margin: 0; font-weight: 600;
 }
@@ -168,7 +170,7 @@ button { cursor: pointer; }
   display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--mute);
 }
 .search-top input, .inline-search input {
-  border: 0; outline: 0; background: transparent; font-size: 13px; width: 240px; color: var(--ink);
+  border: 0; outline: 0; background: transparent; font-size: 13px; width: 180px; color: var(--ink);
 }
 .search-top input::placeholder, .inline-search input::placeholder { color: var(--mute); }
 .search-top kbd {
@@ -186,7 +188,7 @@ button { cursor: pointer; }
 }
 .primary-button:hover { filter: brightness(1.08); }
 .mobile-menu, .mobile-close { display: none; }
-.content-wrap { padding: 32px 48px 56px; max-width: 1680px; margin: auto; }
+.content-wrap { padding: 24px 28px 48px; max-width: 1440px; margin: auto; }
 
 .signal-banner {
   display: flex; align-items: center; gap: 16px; background: var(--ash); border: 1px solid var(--hairline);
@@ -204,7 +206,7 @@ button { cursor: pointer; }
 }
 .banner-action { white-space: nowrap; border-radius: 999px; }
 
-.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 22px 0 36px; }
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 18px 0 28px; }
 .metric-card {
   background: var(--ash); border: 1px solid var(--hairline); border-radius: 16px; padding: 18px;
   display: flex; gap: 14px; align-items: flex-start;
@@ -239,7 +241,7 @@ button { cursor: pointer; }
 .pipeline-dot.screening, .pipeline-dot.qualified { background: var(--spark); }
 .pipeline-dot.outreach { background: var(--ember); }
 
-.workspace-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.9fr); gap: 16px; align-items: start; }
+.workspace-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 16px; align-items: start; }
 .creator-table-card, .detail-card, .workspace-panel {
   border: 1px solid var(--hairline); background: var(--ash); box-shadow: none; border-radius: 18px;
 }
@@ -464,10 +466,10 @@ button { cursor: pointer; }
 .transaction-row > div:last-child small { font-size: 11px; }
 
 @media (max-width: 1100px) {
-  .topbar, .content-wrap { padding-left: 24px; padding-right: 24px; }
+  .topbar, .content-wrap { padding-left: 20px; padding-right: 20px; }
   .workspace-grid { grid-template-columns: 1fr; }
-  .detail-card { display: none; }
-  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .search-top { display: none; }
 }
 @media (max-width: 760px) {
   .sidebar { position: fixed; z-index: 20; left: -280px; transition: left 0.2s ease; }
