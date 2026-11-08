@@ -5,6 +5,8 @@ export function publicPlatformConfig(env: NodeJS.ProcessEnv = process.env) {
     oauthPortalUrl: env.MANUS_OAUTH_PORTAL_URL ?? "",
     apiUrl: env.MANUS_API_URL ?? "",
     apiBrowserKey: env.MANUS_API_BROWSER_KEY ?? "",
+    supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL || "https://bklrfjnqbyyntlhmprkp.supabase.co",
+    supabasePublishableKey: env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
   };
 }
 

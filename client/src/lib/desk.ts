@@ -17,12 +17,15 @@ export type DeskProduct = { id: number; creatorId: string; productBriefId: numbe
 export type DeskTerm = { id: number; creatorId: string; whopProductId: number; creatorSharePercent: number; shadowSharePercent: number; negotiated: boolean; effectiveAt: string; status: string; createdAt: string; updatedAt: string };
 export type DeskTransaction = { id: number; whopPaymentId: string | null; creatorId: string; whopProductId: number | null; grossAmountCents: number; whopFeesCents: number; refundsCents: number; netAmountCents: number; creatorShareCents: number; shadowShareCents: number; currency: string; paymentStatus: string; paidAt: string | null; source: string; importedAt: string };
 
+declare const __SHADOW_SUPABASE_KEY__: string;
+declare const __SHADOW_SUPABASE_URL__: string;
+
 function runtime() {
   const env = import.meta.env as Record<string, string | undefined>;
-  return {
-    url: (env.VITE_SUPABASE_URL || PROJECT_URL).replace(/\/$/, ""),
-    key: env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY || "",
-  };
+  const config = window.__MANUS_CONFIG__;
+  const key = config?.supabasePublishableKey || __SHADOW_SUPABASE_KEY__ || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY || "";
+  const url = config?.supabaseUrl || __SHADOW_SUPABASE_URL__ || env.VITE_SUPABASE_URL || PROJECT_URL;
+  return { url: url.replace(/\/$/, ""), key };
 }
 
 export function isDeskConfigured() {
@@ -31,7 +34,7 @@ export function isDeskConfigured() {
 
 async function rest<T>(path: string, init?: RequestInit): Promise<T> {
   const { url, key } = runtime();
-  if (!key) throw new Error("Supabase publishable key is missing. Set VITE_SUPABASE_PUBLISHABLE_KEY and rebuild.");
+  if (!key) throw new Error("Supabase publishable key is missing. Set SUPABASE_PUBLISHABLE_KEY and redeploy.");
   const response = await fetch(`${url}/rest/v1/${path}`, {
     ...init,
     headers: {
